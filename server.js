@@ -19,35 +19,7 @@ mongoose.connect(process.env.MONGO_URI, {
     }).then(() => console.log("✅ Connecté à MongoDB"))
     .catch(err => console.error("❌ Erreur de connexion MongoDB :", err));
 
-// 📌 Modèles MongoDB
-const utilisateurSchema = new mongoose.Schema({
-    email: { type: String, required: true, unique: true },
-    password: { type: String, required: true },
-    role: { type: String, enum: ['utilisateur', 'pharmacien', 'admin'], required: true },
-    telephone: String,
-    validé: { type: Boolean, default: function() { return this.role === 'utilisateur'; } },
-    pharmacieId: { type: mongoose.Schema.Types.ObjectId, ref: 'Pharmacie' } // 🔗 Lien vers la pharmacie
-});
-const Utilisateur = mongoose.model('Utilisateur', utilisateurSchema);
 
-const pharmacieSchema = new mongoose.Schema({
-    nom: { type: String, required: true },
-    adresse: { type: String, required: true },
-    latitude: Number, // 📌 Réintégration de la localisation
-    longitude: Number // 📌 Réintégration de la localisation
-});
-const Pharmacie = mongoose.model('Pharmacie', pharmacieSchema);
-
-const medicamentSchema = new mongoose.Schema({
-    nom: { type: String, required: true },
-    prix: { type: Number, required: true },
-    quantite: { type: Number, required: true },
-    description: String,
-    datePoste: { type: Date, default: Date.now },
-    pharmacienId: { type: mongoose.Schema.Types.ObjectId, ref: 'Utilisateur', required: true },
-    pharmacieId: { type: mongoose.Schema.Types.ObjectId, ref: 'Pharmacie' } // 📌 Ajout de la pharmacie associée
-});
-const Medicament = mongoose.model('Medicament', medicamentSchema);
 
 // 📌 Inscription
 app.post('/inscription', async(req, res) => {
