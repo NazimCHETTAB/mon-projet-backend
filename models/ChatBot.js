@@ -1,16 +1,14 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
-const chatSchema = new mongoose.Schema({
-    utilisateurId: { 
-        type: mongoose.Schema.Types.ObjectId, 
-        ref: 'Utilisateur', 
-        required: true // Référence à l'utilisateur qui envoie le message
-    },
-    message: { type: String, required: true }, // Contenu du message envoyé
-    reponse: { type: String }, // Réponse du chatbot (peut être vide si en attente de traitement)
-    date: { type: Date, default: Date.now } // Date d'envoi du message
-});
+// Définition du schéma pour le chatbot
+const chatbotSchema = new mongoose.Schema({
+    question: { type: String, required: true }, // La question posée par l'utilisateur
+    answer: { type: String, required: true }, // La réponse associée à la question
+}, { timestamps: true }); // Ajoute automatiquement createdAt et updatedAt
 
-const ChatBot = mongoose.model('ChatBot', chatSchema);
-module.exports = ChatBot;
+const Chatbot = mongoose.model("Chatbot", chatbotSchema);
+
+module.exports = Chatbot;
+
+
 

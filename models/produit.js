@@ -9,7 +9,7 @@ const produitSchema = new mongoose.Schema({
     dateAjout: { type: Date, default: Date.now } // Date d'ajout du produit
 });
 
-// Middleware pour récupérer les infos du vendeur avant d'envoyer la réponse
+// Méthode personnalisée pour retourner les infos du vendeur
 produitSchema.methods.getProduitAvecInfosVendeur = async function () {
     const vendeur = await mongoose.model('Utilisateur').findById(this.vendeur);
     return {
@@ -22,14 +22,15 @@ produitSchema.methods.getProduitAvecInfosVendeur = async function () {
         vendeur: {
             nom: vendeur.nom,
             telephone: vendeur.telephone,
-            estPharmacie: vendeur.role === 'Pharmacien', // Vérifier si c'est un pharmacien
-            nomPharmacie: vendeur.role === 'Pharmacien' ? vendeur.nomPharmacie : null // Ajouter nom pharmacie si pharmacien
+            estPharmacie: vendeur.role === 'Pharmacien',
+            nomPharmacie: vendeur.role === 'Pharmacien' ? vendeur.nomPharmacie : null
         }
     };
 };
 
 const Produit = mongoose.model('Produit', produitSchema);
 module.exports = Produit;
+
 
 
 
