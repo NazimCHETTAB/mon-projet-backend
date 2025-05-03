@@ -33,6 +33,12 @@ router.get('/produits', produitController.getAllProduits);
 // Obtenir un produit par ID (accessible à tous)
 router.get('/produits/:id', produitController.getProduitById);
 
+// Nouvelles routes de recherche
+// Recherche de produits par nom (accessible à tous)
+router.get('/produits/search/nom', produitController.searchProduitsByName);
+
+
+
 module.exports = router;
 
 
