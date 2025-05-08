@@ -1,0 +1,333 @@
+/*const Produit = require('../models/produit'); 
+const Utilisateur = require('../models/utilisateur'); 
+
+exports.ajouterProduit = async (req, res) => {
+    try {
+        console.log('Données reçues:', req.body);
+        console.log('Utilisateur authentifié:', req.utilisateur);
+        
+        const { nom, description, prix, photo } = req.body;
+        const role = req.utilisateur.role;
+        
+        // Vérifier si l'utilisateur est autorisé à ajouter un produit
+        if (!['Pharmacien', 'Vendeur', 'admin'].includes(role)) {
+            return res.status(403).json({ message: "Accès refusé. Vous ne pouvez pas ajouter un produit." });
+        }
+        
+        // Vérifier si tous les champs obligatoires sont remplis
+        if (!nom || !description || !prix) {
+            return res.status(400).json({ message: "Tous les champs obligatoires doivent être remplis." });
+        }
+        
+        // Récupérer les informations complètes de l'utilisateur
+        const utilisateur = await Utilisateur.findById(req.utilisateur.id);
+        if (!utilisateur) {
+            return res.status(404).json({ message: "Utilisateur non trouvé." });
+        }
+        
+        // Créer un nouveau produit avec des informations adaptées au rôle
+        let produitData = {
+            nom: nom,
+            description: description,
+            prix: prix,
+            photo: photo,
+            vendeur: req.utilisateur.id
+        };
+
+        // Personnaliser les informations en fonction du rôle
+        if (role === 'Pharmacien') {
+            // Ajouter des informations spécifiques pour les pharmaciens
+            produitData.description = `${description}\n\nPharmacie: ${utilisateur.nomPharmacie}\nTél: ${utilisateur.numeroTelephone}`;
+        } else if (role === 'Vendeur') {
+            // Ajouter des informations spécifiques pour les vendeurs
+            produitData.description = `${description}\n\nVendeur: ${utilisateur.nom}\nTél: ${utilisateur.numeroTelephone}`;
+        }
+        
+        // Créer et sauvegarder le produit
+        const produit = new Produit(produitData);
+        console.log('Produit avant sauvegarde:', produit);
+        
+        const savedProduct = await produit.save();
+        console.log('Produit sauvegardé:', savedProduct);
+        
+        res.status(201).json(savedProduct);
+    } catch (error) {
+        console.error('Erreur complète:', error);
+        res.status(500).json({ 
+            message: "Erreur lors de l'ajout du produit.", 
+            errorMessage: error.message,
+            stack: error.stack
+        });
+    }
+};
+
+exports.updateProduit = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { nom, description, prix, photo } = req.body;
+        
+        // Vérifier si le produit existe
+        const produit = await Produit.findById(id);
+        if (!produit) {
+            return res.status(404).json({ message: "Produit non trouvé." });
+        }
+        
+        // Vérifier si l'utilisateur est le propriétaire du produit
+        if (produit.vendeur.toString() !== req.utilisateur.id && req.utilisateur.role !== 'admin') {
+            return res.status(403).json({ message: "Vous n'êtes pas autorisé à modifier ce produit." });
+        }
+        
+        // Mettre à jour le produit
+        const updatedProduit = await Produit.findByIdAndUpdate(
+            id,
+            { nom, description, prix, photo },
+            { new: true }
+        );
+        
+        res.status(200).json(updatedProduit);
+    } catch (error) {
+        console.error('Erreur:', error);
+        res.status(500).json({ message: "Erreur lors de la mise à jour du produit." });
+    }
+};
+
+exports.deleteProduit = async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        // Vérifier si le produit existe
+        const produit = await Produit.findById(id);
+        if (!produit) {
+            return res.status(404).json({ message: "Produit non trouvé." });
+        }
+        
+        // Vérifier si l'utilisateur est le propriétaire du produit ou un admin
+        if (produit.vendeur.toString() !== req.utilisateur.id && req.utilisateur.role !== 'admin') {
+            return res.status(403).json({ message: "Vous n'êtes pas autorisé à supprimer ce produit." });
+        }
+        
+        await Produit.findByIdAndDelete(id);
+        res.status(200).json({ message: "Produit supprimé avec succès." });
+    } catch (error) {
+        console.error('Erreur:', error);
+        res.status(500).json({ message: "Erreur lors de la suppression du produit." });
+    }
+};
+
+exports.getAllProduits = async (req, res) => {
+    try {
+        // Récupérer les produits avec les infos du vendeur
+        const produits = await Produit.find()
+            .populate('vendeur', 'nom nomPharmacie role numeroTelephone');
+        
+        res.status(200).json(produits);
+    } catch (error) {
+        console.error('Erreur:', error);
+        res.status(500).json({ message: "Erreur lors de la récupération des produits." });
+    }
+};
+
+exports.getProduitById = async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        // Récupérer le produit avec les infos du vendeur
+        const produit = await Produit.findById(id)
+            .populate('vendeur', 'nom nomPharmacie role numeroTelephone');
+        
+        if (!produit) {
+            return res.status(404).json({ message: "Produit non trouvé." });
+        }
+        
+        // Utiliser la méthode personnalisée du modèle pour obtenir les infos du vendeur
+        const produitAvecInfos = await produit.getProduitAvecInfosVendeur();
+        
+        res.status(200).json(produitAvecInfos);
+    } catch (error) {
+        console.error('Erreur:', error);
+        res.status(500).json({ message: "Erreur lors de la récupération du produit." });
+    }
+};*/
+/*{
+  "nom": "Produit Vendeur",
+  "description": "Ceci est un produit de vendeur",
+  "prix": 25.50,
+  "photo": "https://example.com/autre-photo.jpg"
+}*/
+/*{
+  "email": "test@example.com",
+  "motDePasse": "password123",
+  "telephone": "0123456789",
+  "nomPharmacie": "Test Pharmacy",
+  "licence": "12345"
+}*/
+/*{
+  "email": "test@example.com",
+  "motDePasse": "password123"
+}*/
+/*eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3ZmRhMDhlYTdmYTU4NTQ4Y2MzYjlkNCIsInJvbGUiOiJQaGFybWFjaWVuIiwiaWF0IjoxNzQ0Njc0OTU4LCJleHAiOjE3NDQ3NjEzNTh9.yra7zPZvFY8mMRlax5K91bIv_4y--FcEvZvyulT2unM*/
+/*// 5. Mot de passe oublié
+exports.motDePasseOublie = async (req, res) => {
+    try {
+        const { email } = req.body;
+
+        if (!email) {
+            return res.status(400).json({
+                success: false,
+                message: "Email requis"
+            });
+        }
+
+        const utilisateur = await Utilisateur.findOne({ email });
+        if (!utilisateur) {
+            return res.status(404).json({
+                success: false,
+                message: "Aucun compte trouvé avec cet email"
+            });
+        }
+
+        // Génération d'un token de réinitialisation
+        const resetToken = crypto.randomBytes(20).toString('hex');
+        const resetTokenExpires = Date.now() + 3600000; // 1 heure
+
+        utilisateur.resetPasswordToken = resetToken;
+        utilisateur.resetPasswordExpires = resetTokenExpires;
+        await utilisateur.save();
+
+        // Envoyer l'email (à implémenter)
+        // Ex: await envoyerEmailReinitialisation(email, resetToken);
+
+        res.status(200).json({
+            success: true,
+            message: "Un email de réinitialisation a été envoyé",
+            resetToken // À supprimer en production - seulement pour les tests
+        });
+
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: "Erreur lors du traitement",
+            error: error.message
+        });
+    }
+};
+
+// 6. Réinitialisation du mot de passe
+exports.reinitialiserMotDePasse = async (req, res) => {
+    try {
+        const { token, nouveauMotDePasse } = req.body;
+
+        if (!token || !nouveauMotDePasse) {
+            return res.status(400).json({
+                success: false,
+                message: "Token et nouveau mot de passe requis"
+            });
+        }
+
+        const utilisateur = await Utilisateur.findOne({
+            resetPasswordToken: token,
+            resetPasswordExpires: { $gt: Date.now() }
+        });
+
+        if (!utilisateur) {
+            return res.status(400).json({
+                success: false,
+                message: "Token invalide ou expiré"
+            });
+        }
+
+        utilisateur.motDePasse = await bcrypt.hash(nouveauMotDePasse, 10);
+        utilisateur.resetPasswordToken = undefined;
+        utilisateur.resetPasswordExpires = undefined;
+        await utilisateur.save();
+
+        res.status(200).json({
+            success: true,
+            message: "Mot de passe réinitialisé avec succès"
+        });
+
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: "Erreur lors de la réinitialisation",
+            error: error.message
+        });
+    }
+};
+// authController.js (à ajouter à vos contrôleurs existants)
+exports.deconnexion = (req, res) => {
+    try {
+      // Côté serveur, nous ne pouvons pas réellement "invalider" un JWT
+      // La déconnexion est principalement gérée côté client
+      
+      // Nous pouvons simplement envoyer une réponse de succès
+      res.status(200).json({ 
+        message: "Déconnexion réussie",
+        // Optionnellement, vous pourriez envoyer un token vide ou expiré
+        token: "" 
+      });
+      
+      // Note: Le client devra supprimer le token de son stockage
+    } catch (error) {
+      res.status(500).json({ message: "Erreur lors de la déconnexion", error: error.message });
+    }
+  };
+
+*/
+//send grid :S2SLC9KJEK9MKAYETMG7M88L
+//other one :RKQ31V68QU8WEEWLY1P2KD9L
+//resend :re_JmRzf9v6_FyqEKVrohMJpfQ811W1ZnmUa
+/*const nodemailer = require('nodemailer');
+const { createTransporter } = require('../config/emailConfig');
+
+async function sendEmail(emailData) {
+  const { to, subject, text, html, attachments } = emailData;
+  
+  try {
+    // Créer le transporteur (maintenant asynchrone)
+    const transporter = await createTransporter();
+    
+    // Configuration de l'email
+    const mailOptions = {
+      from: `"${process.env.WEBSITE_NAME}" <test@ethereal.email>`,
+      to,
+      subject,
+      text,
+      html: html || `<p>${text}</p>`,
+      attachments
+    };
+    
+    // Envoi de l'email
+    const info = await transporter.sendMail(mailOptions);
+    console.log(`Email envoyé à ${to}: ${info.messageId}`);
+    
+    // Générer URL pour visualiser l'email
+    console.log(`URL de prévisualisation: ${nodemailer.getTestMessageUrl(info)}`);
+    
+    return { 
+      success: true, 
+      messageId: info.messageId, 
+      previewUrl: nodemailer.getTestMessageUrl(info)
+    };
+  } catch (error) {
+    console.error('Erreur lors de l\'envoi de l\'email:', error);
+    throw error;
+  }
+}
+*/ 
+/*my admin token :eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4MDJjOWI0MDE4NGNkM2MzYjU2YjZkYSIsInJvbGUiOiJBZG1pbiIsImlhdCI6MTc0NTM1NDQ5NywiZXhwIjoxNzQ1NDQwODk3fQ.jLksr3Iwnqce-J2r8SXZ6_inu0a4BzyRda7mp2hkJeA*/
+/*{
+  "email": "pharmacie@gmail.com",
+  "motDePasse": "MotDePasse123!",
+  "telephone": "0561234567",
+  "nomPharmacie": "Pharmacie Centrale",
+  "licence": "PH12345678",
+  "photoProfil": "https://example.com/photo.jpg",
+  "localisation": "36.7525,3.0420,123 Rue des Médicaments, Alger",
+  "tempsDeTravail": "lundi:08:00-19:00,mardi:08:00-19:00,mercredi:08:00-19:00,jeudi:08:00-19:00,vendredi:08:00-19:00,samedi:09:00-17:00,dimanche:fermé"
+}*/
+/* {
+  "email": "k_bensallah@estin.dz",
+  "motDePasse": "khadooj13"
+}*/
+/*eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4MTQ4Y2QyZjRkYmZkMmU5NWMwZDVmNiIsInJvbGUiOiJQaGFybWFjaWVuIiwiaWF0IjoxNzQ2MjIwMTE2LCJleHAiOjE3NDYzMDY1MTZ9.Ynjk29gIUMyyuRGGGRIRNbuwtOc4bP88QiPLkByCjkw*/
