@@ -1,7 +1,25 @@
+
+
 const jwt = require('jsonwebtoken');
 const Pharmacie = require('../models/pharmacie');
 const User = require('../models/utilisateur');
 const authMiddlewares = require('../middlewares/authMiddlewares');
+
+// Fonction pour calculer la distance entre deux points GPS (formule de Haversine)
+function calculateDistance(lat1, lon1, lat2, lon2) {
+    const toRad = (value) => value * Math.PI / 180;
+    const R = 6371; // Rayon de la Terre en km
+    const dLat = toRad(lat2 - lat1);
+    const dLon = toRad(lon2 - lon1);
+    
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+              Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * 
+              Math.sin(dLon/2) * Math.sin(dLon/2);
+    
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c; // Distance en kilomètres
+}
+
 // Ajouter une pharmacie (Réservé aux pharmaciens et aux administrateurs)
 exports.ajouterPharmacie = async (req, res) => {
     try {
@@ -50,6 +68,7 @@ exports.ajouterPharmacie = async (req, res) => {
         res.status(500).json({ message: "Erreur lors de l'ajout de la pharmacie.", error });
     }
 };
+
 // Modifier une pharmacie (Réservé au pharmacien propriétaire ou à l'administrateur)
 exports.modifierPharmacie = async (req, res) => {
     try {
@@ -165,7 +184,7 @@ exports.getAllPharmacies = async (req, res) => {
                 const pharmObj = pharmacie.toObject();
                 const distance = calculateDistance(
                     latitude, longitude,
-                    pharmacie.localisation.latitude, pharmacie.localisation.longitude
+                    pharmacie.latitude, pharmacie.longitude // Correction ici
                 );
                 pharmObj.distance = Math.round(distance * 10) / 10; // Arrondir à 1 décimale
                 return pharmObj;
@@ -202,7 +221,7 @@ exports.getPharmacieById = async (req, res) => {
                 const pharmObj = pharmacie.toObject();
                 const distance = calculateDistance(
                     latitude, longitude,
-                    pharmacie.localisation.latitude, pharmacie.localisation.longitude
+                    pharmacie.latitude, pharmacie.longitude // Correction ici
                 );
                 pharmObj.distance = Math.round(distance * 10) / 10; // Arrondir à 1 décimale
                 return res.status(200).json(pharmObj);
@@ -216,7 +235,6 @@ exports.getPharmacieById = async (req, res) => {
 };
 
 // Recherche de pharmacies par nom (avec option de tri par distance)
-
 exports.rechercherPharmacieParNom = async (req, res) => {
     try {
         const nom = req.query.nom;
@@ -256,6 +274,7 @@ exports.rechercherPharmacieParNom = async (req, res) => {
         res.status(500).json({ message: "Erreur lors de la recherche des pharmacies.", error });
     }
 };
+
 // Nouvelle fonction: Trouver les pharmacies à proximité
 exports.findNearbyPharmacies = async (req, res) => {
     try {
@@ -282,7 +301,7 @@ exports.findNearbyPharmacies = async (req, res) => {
                 const pharmObj = pharmacie.toObject();
                 const dist = calculateDistance(
                     latitude, longitude,
-                    pharmacie.localisation.latitude, pharmacie.localisation.longitude
+                    pharmacie.latitude, pharmacie.longitude
                 );
                 pharmObj.distance = Math.round(dist * 10) / 10; // Arrondir à 1 décimale
                 return pharmObj;
@@ -298,17 +317,3 @@ exports.findNearbyPharmacies = async (req, res) => {
         });
     }
 };
-
-// Fonction utilitaire pour calculer la distance entre deux points GPS
-function calculateDistance(lat1, lon1, lat2, lon2) {
-    const R = 6371; // Rayon de la Terre en km
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLon = (lon2 - lon1) * Math.PI / 180;
-    const a = 
-        Math.sin(dLat/2) * Math.sin(dLat/2) +
-        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
-        Math.sin(dLon/2) * Math.sin(dLon/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-    const distance = R * c; // Distance en km
-    return distance;
-}

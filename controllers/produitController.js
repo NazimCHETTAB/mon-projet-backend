@@ -76,7 +76,7 @@ exports.updateProduit = async (req, res) => {
         }
         
         // Vérifier si l'utilisateur est le propriétaire du produit
-        if (produit.vendeur.toString() !== req.user.id && req.user.role !== 'admin') {
+        if (produit.vendeur.toString() !== req.user.id && req.user.role !== 'Admin') {
             return res.status(403).json({ message: "Vous n'êtes pas autorisé à modifier ce produit." });
         }
         
@@ -127,7 +127,7 @@ exports.deleteProduit = async (req, res) => {
         }
         
         // Vérifier si l'utilisateur est le propriétaire du produit ou un admin
-        if (produit.vendeur.toString() !== req.user.id && req.user.role !== 'admin') {
+        if (produit.vendeur.toString() !== req.user.id && req.user.role !== 'Admin') {
             return res.status(403).json({ message: "Vous n'êtes pas autorisé à supprimer ce produit." });
         }
         
