@@ -6,6 +6,7 @@ const cors = require('cors');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const axios = require('axios');
+const path = require('path');
 const authRoutes = require('./routes/authRoutes');
 const pharmacieRoutes = require('./routes/pharmacieRoutes');
 const chatbotRoutes = require("./routes/chatbotRoutes");
@@ -16,7 +17,7 @@ const emailRoutes = require('./routes/emailRoutes');
 
 const app = express();
 app.use(express.json());
-
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use(cors());
 app.use('/api/auth', authRoutes);
 app.use('/api/pharmacies', pharmacieRoutes);
