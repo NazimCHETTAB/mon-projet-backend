@@ -331,3 +331,27 @@ async function sendEmail(emailData) {
   "motDePasse": "khadooj13"
 }*/
 /*eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4MTQ4Y2QyZjRkYmZkMmU5NWMwZDVmNiIsInJvbGUiOiJQaGFybWFjaWVuIiwiaWF0IjoxNzQ2MjIwMTE2LCJleHAiOjE3NDYzMDY1MTZ9.Ynjk29gIUMyyuRGGGRIRNbuwtOc4bP88QiPLkByCjkw*/
+/*MISTRAL_API_KEY=WfLjfMFh2UY9AwFWvD9pTVPtaivfiGCJ
+
+# MongoDB
+MONGO_URI=mongodb://localhost:27017/pharmacie
+
+# Auth
+JWT_SECRET=7c3e56b847a9f3284df3a08f6e9b5670a1f7e0f34de2a9c3b82e7c5d3b4a1f9d
+JWT_EXPIRE=30d
+JWT_COOKIE_EXPIRE=30
+
+# App Settings
+NODE_ENV=development
+PORT=5000
+CLIENT_URL=http://localhost:3000
+BASE_URL=http://localhost:5000
+
+# Admin
+ADMIN_SECRET_CODE=MedHive2025SecretCode!@#
+
+# Email
+GMAIL_USER=medhivecompany@gmail.com
+EMAIL_PASSWORD=cffa jakm mvjv hjci
+WEBSITE_NAME=MedHive*/
+/*eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4MDJjOWI0MDE4NGNkM2MzYjU2YjZkYSIsInJvbGUiOiJBZG1pbiIsImlhdCI6MTc0NzA0NTI2OCwiZXhwIjoxNzQ3MTMxNjY4fQ.dvguIWcsLnuWaxsnWlZI6kObpm7qvmCAGowB2BKphlY*/

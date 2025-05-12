@@ -1,146 +1,270 @@
 const Produit = require('../models/produit'); 
-const Utilisateur = require('../models/utilisateur'); 
+const Utilisateur = require('../models/utilisateur');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 
-exports.ajouterProduit = async (req, res) => {
-    try {
-        console.log('Données reçues:', req.body);
-        console.log('Utilisateur authentifié:', req.user);
-        
-        const { nom, description, prix, photo } = req.body;
-        const role = req.user.role;
-        
-        // Vérifier si l'utilisateur est autorisé à ajouter un produit
-        if (!['Pharmacien', 'Vendeur', 'Admin'].includes(role)) {
-            return res.status(403).json({ message: "Accès refusé. Vous ne pouvez pas ajouter un produit." });
-        }
-        
-        // Vérifier si tous les champs obligatoires sont remplis
-        if (!nom || !description || !prix) {
-            return res.status(400).json({ message: "Tous les champs obligatoires doivent être remplis." });
-        }
-        
-        // Récupérer les informations complètes de l'utilisateur
-        const utilisateur = await Utilisateur.findById(req.user.id);
-        if (!utilisateur) {
-            return res.status(404).json({ message: "Utilisateur non trouvé." });
-        }
-        
-        // Créer un nouveau produit avec des informations adaptées au rôle
-        let produitData = {
-            nom: nom,
-            prix: prix,
-            photo: photo,
-            vendeur: req.user.id
-        };
-
-        // Personnaliser la description en fonction du rôle
-        let modifiedDescription = description;
-        
-        if (role === 'Pharmacien') {
-            // Ajouter des informations spécifiques pour les pharmaciens
-            modifiedDescription = `${description}\n\nPharmacie: ${utilisateur.nomPharmacie || 'Non spécifiée'}\nTél: ${utilisateur.numeroTelephone || utilisateur.telephone || 'Non spécifié'}`;
-        } else if (role === 'Vendeur') {
-            // Ajouter des informations spécifiques pour les vendeurs
-            modifiedDescription = `${description}\n\nVendeur: ${utilisateur.nom || 'Non spécifié'}\nTél: ${utilisateur.numeroTelephone || utilisateur.telephone || 'Non spécifié'}`;
-        }
-        
-        produitData.description = modifiedDescription;
-        
-        // Créer et sauvegarder le produit
-        const produit = new Produit(produitData);
-        console.log('Produit avant sauvegarde:', produit);
-        
-        const savedProduct = await produit.save();
-        console.log('Produit sauvegardé:', savedProduct);
-        
-        res.status(201).json(savedProduct);
-    } catch (error) {
-        console.error('Erreur complète:', error);
-        res.status(500).json({ 
-            message: "Erreur lors de l'ajout du produit.", 
-            errorMessage: error.message,
-            stack: error.stack
-        });
+// Configuration du stockage des images
+const storage = multer.diskStorage({
+  destination: function(req, file, cb) {
+    const uploadDir = 'uploads/produits';
+    // Créer le dossier s'il n'existe pas
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
     }
+    cb(null, uploadDir);
+  },
+  filename: function(req, file, cb) {
+    // Créer un nom de fichier unique
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const ext = path.extname(file.originalname);
+    cb(null, 'produit-' + uniqueSuffix + ext);
+  }
+});
+
+// Filtre pour vérifier que le fichier est une image
+const fileFilter = (req, file, cb) => {
+  if (file.mimetype.startsWith('image/')) {
+    cb(null, true);
+  } else {
+    cb(new Error('Type de fichier non autorisé. Veuillez télécharger uniquement une image.'), false);
+  }
 };
 
-exports.updateProduit = async (req, res) => {
+// Configuration du middleware de téléchargement
+const upload = multer({
+  storage: storage,
+  limits: {
+    fileSize: 5 * 1024 * 1024 // Limite de 5 Mo
+  },
+  fileFilter: fileFilter
+});
+
+// Ajouter un produit avec support de téléchargement d'image
+exports.ajouterProduit = [
+  upload.single('photo'),
+  
+  async (req, res) => {
     try {
-        const { id } = req.params;
-        const { nom, description, prix, photo } = req.body;
-        
-        // Vérifier si le produit existe
-        const produit = await Produit.findById(id);
-        if (!produit) {
-            return res.status(404).json({ message: "Produit non trouvé." });
-        }
-        
-        // Vérifier si l'utilisateur est le propriétaire du produit
-        if (produit.vendeur.toString() !== req.user.id && req.user.role !== 'admin') {
-            return res.status(403).json({ message: "Vous n'êtes pas autorisé à modifier ce produit." });
-        }
-        
-        // Récupérer les informations complètes de l'utilisateur
-        const utilisateur = await Utilisateur.findById(req.user.id);
-        if (!utilisateur) {
-            return res.status(404).json({ message: "Utilisateur non trouvé." });
-        }
-        
-        // Personnaliser la description en fonction du rôle
-        let modifiedDescription = description;
-        const role = req.user.role;
-        
-        if (role === 'Pharmacien') {
-            // Ajouter des informations spécifiques pour les pharmaciens
-            modifiedDescription = `${description}\n\nPharmacie: ${utilisateur.nomPharmacie || 'Non spécifiée'}\nTél: ${utilisateur.numeroTelephone || utilisateur.telephone || 'Non spécifié'}`;
-        } else if (role === 'Vendeur') {
-            // Ajouter des informations spécifiques pour les vendeurs
-            modifiedDescription = `${description}\n\nVendeur: ${utilisateur.nom || 'Non spécifié'}\nTél: ${utilisateur.numeroTelephone || utilisateur.telephone || 'Non spécifié'}`;
-        }
-        
-        // Mettre à jour le produit
-        const updatedProduit = await Produit.findByIdAndUpdate(
-            id,
-            { 
-                nom, 
-                description: modifiedDescription, 
-                prix, 
-                photo 
-            },
-            { new: true }
-        );
-        
-        res.status(200).json(updatedProduit);
+      const { nom, description, prix } = req.body;
+      const role = req.user.role;
+      
+      console.log("USER ID:", req.user.id);
+      console.log("USER ROLE:", role);
+      
+      // Basic validations
+      if (!['Pharmacien', 'Vendeur', 'Admin'].includes(role)) {
+        if (req.file) fs.unlinkSync(req.file.path);
+        return res.status(403).json({ message: "Accès refusé." });
+      }
+      
+      if (!nom || !description || !prix) {
+        if (req.file) fs.unlinkSync(req.file.path);
+        return res.status(400).json({ message: "Tous les champs obligatoires doivent être remplis." });
+      }
+      
+      // Get complete user data
+      const utilisateur = await Utilisateur.findById(req.user.id);
+      console.log("FULL USER DATA:", JSON.stringify(utilisateur));
+      
+      if (!utilisateur) {
+        if (req.file) fs.unlinkSync(req.file.path);
+        return res.status(404).json({ message: "Utilisateur non trouvé." });
+      }
+      
+      // Create custom description based on role
+      let modifiedDescription = description;
+      
+      if (role === 'Pharmacien') {
+        console.log("IS PHARMACIEN - SHOULD MODIFY DESC");
+        modifiedDescription = `${description}\n\nPharmacie: ${utilisateur.nomPharmacie || 'Non spécifiée'}\nLocalisation: ${utilisateur.localisation || 'Non spécifiée'}\nTél: ${utilisateur.telephone || 'Non spécifié'}`;
+      } else if (role === 'Vendeur') {
+        console.log("IS VENDEUR - SHOULD MODIFY DESC");
+        modifiedDescription = `${description}\n\nVendeur: ${utilisateur.username || 'Non spécifié'}\nTél: ${utilisateur.telephone || 'Non spécifié'}`;
+      }
+      
+      console.log("ORIGINAL DESC:", description);
+      console.log("MODIFIED DESC:", modifiedDescription);
+      
+      // Create product data
+      let produitData = {
+        nom: nom,
+        prix: parseFloat(prix),
+        description: modifiedDescription,
+        vendeur: req.user.id
+      };
+      
+      // Handle image
+      if (req.file) {
+        produitData.photo = `/uploads/produits/${req.file.filename}`;
+      } else if (req.body.photo) {
+        produitData.photo = req.body.photo;
+      }
+      
+      console.log("FINAL PRODUCT DATA:", produitData);
+      
+      // Save product
+      const produit = new Produit(produitData);
+      const savedProduct = await produit.save();
+      
+      console.log("SAVED PRODUCT:", savedProduct);
+      
+      // Force update the description directly in the database to ensure it's saved correctly
+      const finalProduct = await Produit.findByIdAndUpdate(
+        savedProduct._id,
+        { description: modifiedDescription },
+        { new: true }
+      );
+      
+      console.log("FINAL UPDATED PRODUCT:", finalProduct);
+      
+      res.status(201).json(finalProduct);
     } catch (error) {
-        console.error('Erreur:', error);
-        res.status(500).json({ message: "Erreur lors de la mise à jour du produit.", error });
+      if (req.file) fs.unlinkSync(req.file.path);
+      console.error('Erreur:', error);
+      res.status(500).json({ 
+        message: "Erreur lors de l'ajout du produit.", 
+        error: error.message
+      });
     }
-};
+  }
+];
+    
+
+// Mettre à jour un produit avec support de téléchargement d'image
+exports.updateProduit = [
+  upload.single('photo'), // Middleware pour télécharger l'image
+  
+  async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { nom, description, prix } = req.body;
+      
+      // Vérifier si le produit existe
+      const produit = await Produit.findById(id);
+      if (!produit) {
+        // Supprimer l'image téléchargée si elle existe
+        if (req.file) {
+          fs.unlinkSync(req.file.path);
+        }
+        return res.status(404).json({ message: "Produit non trouvé." });
+      }
+      
+      // Vérifier les autorisations
+      if (produit.vendeur.toString() !== req.user.id && req.user.role !== 'Admin') {
+        // Supprimer l'image téléchargée si elle existe
+        if (req.file) {
+          fs.unlinkSync(req.file.path);
+        }
+        return res.status(403).json({ message: "Vous n'êtes pas autorisé à modifier ce produit." });
+      }
+      
+      // Rechercher l'utilisateur
+      const utilisateur = await Utilisateur.findById(req.user.id);
+      if (!utilisateur) {
+        // Supprimer l'image téléchargée si elle existe
+        if (req.file) {
+          fs.unlinkSync(req.file.path);
+        }
+        return res.status(404).json({ message: "Utilisateur non trouvé." });
+      }
+      
+      // Personnaliser la description selon le rôle
+      let modifiedDescription = description;
+      const role = req.user.role;
+      
+      if (role === 'Pharmacien') {
+        modifiedDescription = `${description}\n\nPharmacie: ${utilisateur.nomPharmacie || 'Non spécifiée'}\nTél: ${utilisateur.numeroTelephone || utilisateur.telephone || 'Non spécifié'}`;
+      } else if (role === 'Vendeur') {
+        modifiedDescription = `${description}\n\nVendeur: ${utilisateur.nom || 'Non spécifié'}\nTél: ${utilisateur.numeroTelephone || utilisateur.telephone || 'Non spécifié'}`;
+      }
+      
+      // Préparer les données de mise à jour
+      const updateData = { 
+        nom, 
+        description: modifiedDescription, 
+        prix: parseFloat(prix)
+      };
+      
+      // Gérer l'image
+      if (req.file) {
+        // Si une nouvelle image a été téléchargée
+        
+        // Supprimer l'ancienne image si elle existe et est un fichier réel (pas une URL externe)
+        if (produit.photo && produit.photo.startsWith('/uploads/')) {
+          const oldImagePath = path.join(__dirname, '..', produit.photo);
+          if (fs.existsSync(oldImagePath)) {
+            fs.unlinkSync(oldImagePath);
+          }
+        }
+        
+        // Mettre à jour le chemin de la nouvelle image
+        updateData.photo = `/uploads/produits/${req.file.filename}`;
+      } else if (req.body.photo !== undefined) {
+        // Si une URL d'image a été fournie dans req.body
+        updateData.photo = req.body.photo;
+      }
+      
+      // Mettre à jour le produit
+      const updatedProduit = await Produit.findByIdAndUpdate(
+        id,
+        updateData,
+        { new: true }
+      );
+      
+      res.status(200).json(updatedProduit);
+    } catch (error) {
+      // Supprimer l'image en cas d'erreur
+      if (req.file) {
+        fs.unlinkSync(req.file.path);
+      }
+      
+      console.error('Erreur:', error);
+      res.status(500).json({ 
+        message: "Erreur lors de la mise à jour du produit.", 
+        errorMessage: error.message,
+        stack: error.stack 
+      });
+    }
+  }
+];
+
+// Fonction pour supprimer un produit et son image associée
 exports.deleteProduit = async (req, res) => {
-    try {
-        const { id } = req.params;
-        
-        // Vérifier si le produit existe
-        const produit = await Produit.findById(id);
-        if (!produit) {
-            return res.status(404).json({ message: "Produit non trouvé." });
-        }
-        
-        // Vérifier si l'utilisateur est le propriétaire du produit ou un admin
-        if (produit.vendeur.toString() !== req.user.id && req.user.role !== 'admin') {
-            return res.status(403).json({ message: "Vous n'êtes pas autorisé à supprimer ce produit." });
-        }
-        
-        await Produit.findByIdAndDelete(id);
-        res.status(200).json({ message: "Produit supprimé avec succès." });
-    } catch (error) {
-        console.error('Erreur:', error);
-        res.status(500).json({ 
-            message: "Erreur lors de la suppression du produit.",
-            error: error.toString(),
-            stack: error.stack
-        });
+  try {
+    const { id } = req.params;
+    
+    // Vérifier si le produit existe
+    const produit = await Produit.findById(id);
+    if (!produit) {
+      return res.status(404).json({ message: "Produit non trouvé." });
     }
+    
+    // Vérifier les autorisations
+    if (produit.vendeur.toString() !== req.user.id && req.user.role !== 'Admin') {
+      return res.status(403).json({ message: "Vous n'êtes pas autorisé à supprimer ce produit." });
+    }
+    
+    // Supprimer l'image si elle existe et est un fichier réel (pas une URL externe)
+    if (produit.photo && produit.photo.startsWith('/uploads/')) {
+      const imagePath = path.join(__dirname, '..', produit.photo);
+      if (fs.existsSync(imagePath)) {
+        fs.unlinkSync(imagePath);
+      }
+    }
+    
+    // Supprimer le produit
+    await Produit.findByIdAndDelete(id);
+    
+    res.status(200).json({ message: "Produit supprimé avec succès." });
+  } catch (error) {
+    console.error('Erreur:', error);
+    res.status(500).json({ 
+      message: "Erreur lors de la suppression du produit.", 
+      errorMessage: error.message,
+      stack: error.stack 
+    });
+  }
 };
 exports.getAllProduits = async (req, res) => {
     try {
@@ -239,5 +363,5 @@ exports.searchProduitsByName = async (req, res) => {
             stack: error.stack 
         });
     }
-};
+};//k
 

@@ -1,47 +1,39 @@
-const Chatbot = require("../models/ChatBot");
+const axios = require('axios');
 
-// Ajouter une nouvelle question-réponse (réservé à l'admin)
-exports.addQA = async (req, res) => {
+exports.handleChatbotRequest = async (req, res) => {
     try {
-        const { question, answer } = req.body;
-        const newQA = new Chatbot({ question, answer });
-        await newQA.save();
-        res.status(201).json({ message: "Question ajoutée avec succès!", newQA });
-    } catch (error) {
-        res.status(500).json({ message: "Erreur lors de l'ajout de la question", error });
-    }
-};
+        const { question } = req.body;
 
-// Obtenir une réponse en fonction d'une question (accessible uniquement aux utilisateurs authentifiés)
-exports.getAnswer = async (req, res) => {
-    try {
-        if (!req.user) { // Changé de req.utilisateur à req.user
-            return res.status(401).json({ message: "Authentification requise pour utiliser le chatbot" });
+        if (!question) {
+            return res.status(400).json({ message: "La question est requise" });
         }
-        
-        const { question } = req.query;
-        const qa = await Chatbot.findOne({ question });
-        if (!qa) {
-            return res.status(404).json({ message: "Question non trouvée" });
-        }
-        res.status(200).json({ answer: qa.answer });
-    } catch (error) {
-        res.status(500).json({ message: "Erreur lors de la récupération de la réponse", error });
-    }
-};
 
+        const response = await axios.post(
+            'https://api.mistral.ai/v1/chat/completions',
+            {
+                model: "mistral-tiny",
+                messages: [{ role: "user", content: question }]
+            },
+            {
+                headers: {
+                    'Authorization': `Bearer ${process.env.MISTRAL_API_KEY}`,
+                    'Content-Type': 'application/json'
+                }
+            }
+        );
 
-// Supprimer une question-réponse (réservé à l'admin)
-exports.deleteQA = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const deletedQA = await Chatbot.findByIdAndDelete(id);
-        if (!deletedQA) {
-            return res.status(404).json({ message: "Question non trouvée" });
+        console.log('Mistral API response:', response.data);  // Log Mistral API response
+        if (response.data.choices && response.data.choices[0]) {
+            res.json({ answer: response.data.choices[0].message.content });
+        } else {
+            res.json({ answer: "No response from Mistral AI." });
         }
-        res.status(200).json({ message: "Question supprimée avec succès!" });
     } catch (error) {
-        res.status(500).json({ message: "Erreur lors de la suppression de la question", error });
+        console.error("Erreur avec l'IA :", error.response ? error.response.data || error.message : error.message);
+        res.status(500).json({
+            message: "Erreur avec l'IA",
+            erreur: error.response ? error.response.data || error.message : error.message
+        });
     }
 };
 
